@@ -1,21 +1,24 @@
 import os
-import json
+# import json
 import csv
-import re
+# import re
 
 
 class PriceMachine():
 
-    # Создадим конструктор класса, список, который будет принимать данные,
-    # загружаемые из файлов и переменную для хранения макс. длины названий тов-в:
+
+# Создадим конструктор класса, список, который будет принимать данные,
+# загружаемые из файлов и переменную для хранения макс. длины названий тов-в:
 
     def __init__(self):
         self.data = []
         self.result = ''
         self.name_length = 0
+        self.last_search_results = []
 
-    # Создадим метод, который будет загружать данные из всех файлов с прайсами в
-    #  директории file_path в словарь:
+
+# Создадим метод, который будет загружать данные из всех файлов с прайсами в
+#  директории file_path в словарь:
     def load_prices(self, file_path='C:/Users/User/pythonProject6/PycharmProjects/InternshipProject'):
         '''
             Сканирует указанный каталог. Ищет файлы со словом price в названии.
@@ -25,11 +28,11 @@ class PriceMachine():
                 название
                 наименование
                 продукт
-                
+
             Допустимые названия для столбца с ценой:
                 розница
                 цена
-                
+
             Допустимые названия для столбца с весом (в кг.)
                 вес
                 масса
@@ -41,8 +44,10 @@ class PriceMachine():
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Каталог не найден: {file_path}")
 
-
         files = [f for f in os.listdir(file_path) if 'price' in f.lower()]
+        if not files:
+            print("Файлы с прайсами не найдены.")
+            return
         # здесь список получает все файлы, где встречается слово price в названии.
         # Далее обработаем все найденные файлы (открываем с использованием with, что
         # обеспечит автоматическое закрытие файла после завершения работы с ним):
@@ -95,9 +100,13 @@ class PriceMachine():
         return product_idx, price_idx, weight_idx
 
 
-
     # Создадим метод для экспорта данных в html. fname - имя файла по умолчанию.
-    def export_to_html(self, fname='output.html'):
+    def export_to_html(self, data, fname='output.html'):
+        if not data:
+            print("Нет данных для экспорта.")
+            return
+
+
         # Формируем строку с html-кодом, которая будет содержать таблицу с данными:
         result = '''
             <!DOCTYPE html>
@@ -119,12 +128,13 @@ class PriceMachine():
 
         # Цикл, который переберет каждый элемент в data. Добавим enumerate для формирования
         # порядкового номера (порядковый номер зададим с 1, а не с 0, т.к. индексы с 0):
-        for i, item in enumerate(self.data, start=1):
+        # for i, item in enumerate(self.data, start=1):
+        for i, item in enumerate(data, start=1):
             # для каждого элемента добавим строки с данными (наименование, цена, вес и тд)
             # i вставляет порядковый номер в ячейку, остальные - данные:
             result += f'''
                             <tr>
-                            
+
                                 <td>{i}</td>
                                 <td>{item['product']}</td>
                                 <td>{item['price']}</td>
@@ -149,22 +159,26 @@ class PriceMachine():
     # (в нижнем регистре),который нужно найти:
     def find_text(self, text):
         result = [item for item in self.data if text.lower() in item['product'].lower()]
+        self.last_search_results = sorted(result, key=lambda x: x['price_per_kg'])  # Сохранение результатов поиска
+        return self.last_search_results
         # Отсортируем по цене за кг:
-        return sorted(result, key=lambda x: x['price_per_kg'])
+        # return sorted(result, key=lambda x: x['price_per_kg'])
 
 
-# # если файл будет запущен, а не импортирован как модуль в др программе, выполняется данный код:
-# создадим объект и вызовем метод загрузки данных из всех прайсов:
+# если файл будет запущен, а не импортирован как модуль в др программе, выполняется данный код:
+
 if __name__ == "__main__":
+#     pm = PriceMachine()
     pm = PriceMachine()
-    # folder_path = 'C:/Users/User/pythonProject6/PycharmProjects'
-    print(pm.load_prices())
+# folder_path = 'C:/Users/User/pythonProject6/PycharmProjects'
+#     print(pm.load_prices())
+    pm.load_prices()
 
-    # Цикл, который открыт, пока пользователь не выйдет:
+# Цикл, который открыт, пока пользователь не выйдет:
     while True:
         # пропишем переменную, сохраняющую введенный пользователем текст, если выход написан - окончим цикл:
         search_text = input("Введите текст для поиска (или 'exit' для выхода): ")
-        if search_text.lower() == 'exit' or 'учше':
+        if search_text.lower() == 'exit':
             print("Работа завершена.")
             break
 
@@ -176,16 +190,25 @@ if __name__ == "__main__":
         if results:
             print(f"{'№':<5} {'Наименование':<30} {'Цена':<10} {'Вес':<10} {'Файл':<15} {'Цена за кг.':<10}")
 
-            # пройдемся по списку, добавляя порядковый номер, зададим вывод с 1 (чтобы список не начинался с 0).
-            # Выведем данные о каждом найденном товаре - его порядковый номер, вес, название файла и цену за кг
-            # (точность - 2 знака после,):
+        # пройдемся по списку, добавляя порядковый номер, зададим вывод с 1 (чтобы список не начинался с 0).
+        # Выведем данные о каждом найденном товаре - его порядковый номер, вес, название файла и цену за кг
+        # (точность - 2 знака после,):
             for i, item in enumerate(results, start=1):
                 print(f"{i:<5} {item['product']:<30} {item['price']:<10} {item['weight']:<10} {item['file']:<15} "
                       f"{item['price_per_kg']:<10.2f}")
+            # Экспорт результатов поиска
+            pm.export_to_html(results)
+            print("Данные экспортированы в output.html")
         else:
             print("Товары не найдены.")
 
-# Выведем конец, вызовем метод для экспорта в html-файл:
-print('the end')
-print(pm.export_to_html())
-print("Данные экспортированы в output.html")
+# print('the end')
+# print(pm.export_to_html())
+# print("Данные экспортированы в output.html")
+    # Если есть последние результаты поиска, экспортируем их
+    if pm.last_search_results:
+        pm.export_to_html(pm.last_search_results)
+    else:
+        print("Нет данных для экспорта.")
+
+    print("the end")
