@@ -112,6 +112,7 @@ class PriceMachine():
             <!DOCTYPE html>
             <html>
             <head>
+                <meta charset="UTF-8">  <!-- Добавляем тег meta для кодировки -->
                 <title>Позиции продуктов</title>
             </head>
             <body>
